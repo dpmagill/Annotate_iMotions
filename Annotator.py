@@ -5,7 +5,7 @@ Summary
 -------
 
 Function file for function Annotator. This file is intended to be called by 
-script "StartHere.py". See this script for details.
+script "StartHere_Script.py". See this script for details.
 
 
 Inputs
