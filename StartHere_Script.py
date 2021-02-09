@@ -3,29 +3,36 @@
 
 Summary
 -------
-                                                       
-This script produces a new copy of each iMotions data file (there is one file   
-per participant) with an event annotations column (named "Event") inserted.  
-These new copies are written to a new folder named "Annotated", which will be  
-located in the same folder in which the iMotions data files are located (this  
-new folder will be generated automatically). Note that the original iMotions
-data files will not be modified. Also note that the iMotions data files are not 
-combined into a single file because of the large size of each file (~ 50 MB).
+ 
+This script aggregates emotion expressions from iMotions "raw data" files.
+Aggregation is by participant and event. The events to be aggregated are
+specified by an Excel file that lists the participant IDs and the timestamps 
+that correspond to the beginning of the events.
 
-The annotations for all participants are taken from a single specified Excel 
-file. The column headers of this Excel file serve as the text of the 
-annotations, and the rows of the file indicate the timestamps at which the 
-annotations are to be inserted into the new iMotions files. The column headers
-or rows of the Excel file can be modified as long as they stay within the  
-constraints noted in the example table below. 
+The aggregation method is the mean.
+      
+Inputs:
 
-Processing time can be rather long. Plan on the function writing about 2 to 3
-iMotions files per minute. To test/experiment with the function, consider only 
-including a few iMotions data files to save time; the function allows fewer 
-data files to present compared to the number of participants listed on the 
-Excel annotation files.
+ - A batch of iMotions data files (one file per participant) (see example 
+   below).
+ - A single Excel file that lists the participant IDs and the timestamps that 
+   correspond to the beginning of the events (see example below).
+ - A variable indicating the emotion expressions to aggregage.
 
-Excel Annotations File used as Input:
+Outputs:
+             
+ - A batch of iMotions data files (one file per participant) with a new "Event"
+   column that specifies the correspondence between events and timestamps (see 
+   example below). Note that this batch of files will not overwrite the batch 
+   of original iMotions files.
+ - A single csv file that contains the aggregated emotion expressions by 
+   participant and event (see example below).                                   
+
+
+Example Input and Output File Layout
+------------------------------------
+
+Excel Annotations File Input (One File for All Participants):
 
 _______________________________________________________________________
 "Participant #" | ... | "Webcam Start" | "Start of interaction" | ... |
@@ -45,35 +52,76 @@ named            (not used).                      These columns should be
                                                   in chronological order. Other 
                                                   columns can be placed to the
                                                   right of these columns, but
-                                                  they will not be used.
+                                                  they will not be used. 
 
-iMotions Data File to be Written (One per Participant):
+An iMotions Data File Input (One per Participant):
 
-__________________________________________________
-... | "Event"                | "MediaTime" | ... |
-____|________________________|____________________
-... | "Webcam Start"         | 100         | ... | <- Start time of  
-... | "Webcam Start"         | 133         | ... |    "Webcam Start". This
-... | "Webcam Start"         | 166         | ... |    annotation continues
-.   | .                      | .           | .   |    until the start time of
-.   | .                      | .           | .   |    the next annotation.
-.   | .                      | .           | .   |
-... | "Start of interaction" | 2000        | ... | <- Start time of "Start of
-... | "Start of interaction" | 2033        | ... |    interaction".
-... | "Start of interaction" | 2066        | ... |
-____|________________________|_____________|_____|
-     ^                           ^
-     Annotation from column      Timestamp in 
-     header of Excel annotation  milliseconds.
-     file.
+_____________________________
+| "MediaTime" | "Joy" | ... |
+|_____________|_______|_____|
+| 100         | 2.2   | ... |  
+| 133         | 40.5  | ... | 
+| 166         | 20.7  | ... |    
+| .           | .     | .   |   
+| .           | .     | .   |    
+| .           | .     | .   |
+| 2000        | 0.7   | ... | 
+| 2033        | 0.2   | ... |    
+| 2066        | 0.1   | ... |
+|_____________|_______|_____|
+  ^                     ^
+  Timestamp in          Additional expression columns.
+  milliseconds.
 
+An iMotions Data File Output (One per Participant):
 
-Setup
------
+______________________________________________________
+| "Event"                | "MediaTime" | "Joy" | ... |    
+|________________________|_____________________|_____|
+| "Webcam Start"         | 100         | 0.2   | ... | <- Start time of "Webcam  
+| "Webcam Start"         | 133         | 0.4   | ... |    Start". This 
+| "Webcam Start"         | 166         | 4.0   | ... |    annotation continues
+| .                      | .           | .     | .   |    until the start time 
+| .                      | .           | .     | .   |    of the next event.
+| .                      | .           | .     | .   | <- Other event rows.
+| "Start of interaction" | 2000        | 5.2   | ... | <- Start time of "Start 
+| "Start of interaction" | 2033        | 80.2  | ... |    of interaction".
+| "Start of interaction" | 2066        | 1.5   | ... |
+|________________________|_____________|_______|_____|
+  ^                           ^                  ^                                    
+  Annotation from column      Timestamp in       Additional expression columns.
+  header of Excel annotation  milliseconds.
+  file.
+
+Aggregated Expression File Output  (One File for All Participants):
+
+_____________________________________
+"ID" | "Event"        | "Joy" | ... |
+_____|________________|_______|_____|
+4001 | "Webcam Start" | 4.5   | ... | <- Joy aggregated (mean) across all 
+4001 | "Start of ..." | 2.3   | ... |    timestamps within event "Webcam
+   . | .              | .     | .   |    Start" for participant 4001.
+   . | .              | .     | .   | <- Additional aggregated events.
+   . | .              | .     | .   |
+4005 | "Webcam Start" | 40.5  | ... |
+4005 | "Start of ..." | 4.2   | ... | 
+_____|________________|_______|_____|
+^        ^                      ^                               
+ID       Event                  Additional expression columns.
+column.  annotations. 
+                                          
+
+Instructions
+------------
+
+1. Edit the variable "FunFolder" below to the location of the Python files 
+   "Annotate.py" and "Aggregate.py". These files can be located in any folder.
+
+2. Import the functions within these files.
                                                                               
-1. Place all iMotions data files (one per participant) into the same folder, 
-   which can be any name. Then, edit the variable "DataFolder" below to the  
-   path of the folder.
+3. Place all iMotions data files (one per participant) into the same folder, 
+   which can be any name. Then, edit the variable "InputDataFolder" below to   
+   the location of the folder.
 
    Note that each data file name should match the name in header "Participant  
    #" of the Excel annotation file. For example, if file 4001.txt is included,   
@@ -81,28 +129,28 @@ Setup
    file. Also note that not all iMotions data files need to be included in the  
    folder; that is, there can be fewer files than names in the Excel file.  
    Fewer files may be included if it is desired to annotate only a subset of
-   files. 
+   files.
+
+   Note that the original copies of the iMotions data sets will not be 
+   modified. That is, the annotations will be written to new copies of the 
+   files.
    
-2. Edit the variable "ExcelFile" below to the path of the Excel file that has 
+4. Edit the variable "ExcelFile" below to the path of the Excel file that has 
    the annotations. The Excel file can be located in any folder. 
 
    Regarding the contents of the file, see the example table above for 
    specifications. Note that this file must be an Excel file (i.e., have file
    extension .xlsx). 
 
-3. Edit the variable "FunFolder" below to the path of the Python file 
-   "Annotator.py". The python file can be located in any folder.
+5. Edit the variable "OutputDataFolder" below to the desired path of the folder
+   that will be written to hold the output (annotated) iMotions data files.      
 
-   "Annotator.py" is a custom function used to annotate the iMotions data 
-   files.
+6. Edit the variable "ExpressionNames" below to the desired expressions to be
+   aggregated. 
 
-4. Import the function code for "Annotator.py" and run the code.
-
-   Annotated copies of the iMotion data sets will be written to a new folder, 
-   "Annotated". This folder will be written within the folder specified to
-   hold the iMotions data files (as specified by variable "DataFolder"). 
-   Original copies of the iMotions data sets will not be modified.
-
+7. Edit the variable "AggregateFile" below to the desired path of the file that
+   will be written with the aggregated expressions. 
+   
 
 Requires
 --------
@@ -110,7 +158,8 @@ Requires
 - Python 3
 - Pandas 
 - NumPy
-- Annotator.py
+- Annotate.py (custom file)
+- Aggregate.py (custom file)
 
 
 Author
@@ -124,33 +173,48 @@ Suarez Behavioral Labs, College of Business, The University of Akron
 """
 
 
-##### Specify data locations #####
+##### Import Python code #####
 
-#Specify location of data without annotations
-DataFolder = "G:/My Drive/U Akron/CBA RA/Hamdani/Data"
-
-#Specify location of file with annotations to insert
-ExcelFile = "G:/My Drive/U Akron/CBA RA/Hamdani/Timestamps/2020 lab timestamps imotion.xlsx"
-
-
-##### Specify annotation code location #####
-
-#Specify location of annotation code
+#Specify location of Python files Annotate.py and Aggregate.py
 FunFolder = "G:/My Drive/U Akron/CBA RA/Hamdani/Code"
 
-
-##### Run annotation code #####
-
-#Add function location to Python path
+#Add location to Python path
 import sys
 sys.path.append(FunFolder)
 
-#Import function code
-from Annotator import Annotator
+#Import functions
+from Annotate import Annotate
+from Aggregate import Aggregate
+
+
+##### Write annotated iMotions files #####
+
+#Specify location of the input iMotions data files
+InputDataFolder = "G:/My Drive/U Akron/CBA RA/Hamdani/Input/iMotions"
+
+#Specify Excel file containing annotations to insert. Must have file extension 
+#".xlsx". Class str.
+ExcelFile = "G:/My Drive/U Akron/CBA RA/Hamdani/Input/Timestamps/2020 lab timestamps imotion.xlsx"
+
+#Specify location where the annotated iMotions data files will be written to
+OutputDataFolder = "G:/My Drive/U Akron/CBA RA/Hamdani/Output/iMotions"
 
 #Run annotation code
 #This may take about an hour to run if using the data of about 100 
 #participants.
-Annotator(ExcelFile, DataFolder)
+Annotate(ExcelFile, InputDataFolder, OutputDataFolder)
 
+
+##### Write file containing aggregated events #####
+
+#List of string elements indicating the expressions to be aggregated.
+ExpressionNames = \
+    ['Anger', 'Sadness', 'Disgust', 'Joy', 'Surprise', 'Fear', 'Contempt']
+
+#Full path of file to which a table of aggregated expressions is to be written. 
+#The file extension must be ".csv". Class str.
+AggregateFile = "G:/My Drive/U Akron/CBA RA/Hamdani/Output/Aggregated/AggTable.csv"
+
+#Run aggregation code
+Aggregate(ExpressionNames, OutputDataFolder, AggregateFile)
 
